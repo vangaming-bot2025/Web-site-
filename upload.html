@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Private File Share — Upload & Download</title>
+  <style>
+    body{ font-family: system-ui, Arial; padding:20px }
+    .card{ max-width:800px }
+    input[type=file]{ display:block; margin-bottom:12px }
+    a.download{ margin-left:8px; font-size:0.9em }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Upload Files</h1>
+    <form id="uploadForm">
+      <input type="file" name="file" required />
+      <button type="submit">Upload</button>
+    </form>
+    <h2>Available Files</h2>
+    <ul id="files"></ul>
+    <button id="logout">Logout</button>
+  </div>
+  <script>
+    async function loadFiles(){
+      const res = await fetch('/api/files');
+      if (!res.ok) return location.href = '/';
+      const data = await res.json();
+      const ul = document.getElementById('files'); ul.innerHTML='';
+      data.files.forEach(f => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = f.url; a.textContent = f.name; a.className = 'download';
+        a.download = f.name;
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+    }
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = e.target.querySelector('input[type=file]');
+      const fd = new FormData(); fd.append('file', input.files[0]);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      if (res.ok) { loadFiles(); input.value=''; }
+      else alert('Upload failed');
+    });
+    document.getElementById('logout').addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      location.href = '/';
+    });
+    loadFiles();
+  </script>
+</body>
+</html>
